@@ -1,0 +1,82 @@
+pipeline {
+
+    agent any
+
+    stages {
+
+        stage('Clone Repository') {
+
+            steps {
+
+                git branch: 'main',
+                    url: 'https://github.com/maheshb415/Python-Pytest-ApiAutomationTesting.git'
+
+            }
+
+        }
+
+        stage('Build Test Container') {
+
+            steps {
+
+                script {
+                    docker.build('pytest-api-auto', '.')
+                }
+
+            }
+
+        }
+
+        stage('Run Tests') {
+
+            steps {
+
+                script {
+                    docker.image('pytest-api-auto').inside {
+                        sh 'pytest testcases/ --html=report.html'
+                    }
+                }
+
+            }
+
+        }
+
+    }
+
+    post {
+
+        always {
+
+            // Archive HTML report and display in Jenkins
+
+            publishHTML(target: [
+
+                reportName: 'Test Report',
+
+                reportDir: '',
+
+                reportFiles: 'report.html',
+
+                alwaysLinkToLastBuild: true,
+
+                keepAll: true
+
+            ])
+
+        }
+
+        success {
+
+            echo 'Tests passed successfully.'
+
+        }
+
+        failure {
+
+            echo 'One or more tests failed.'
+
+        }
+
+    }
+
+}
